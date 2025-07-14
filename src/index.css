@@ -2,11 +2,19 @@
 
 @tailwind utilities;
 
+@theme inline {
+  --color-mainColor: #1a1a1a;
+  --color-secondaryColor: #912b88;
+}
+
 @layer base {
   body {
     @apply text-white bg-black;
   }
   .myContainer {
     @apply max-w-[1400px] mx-auto px-4;
+  }
+  .mainButton {
+    @apply bg-mainColor text-white px-6 py-2 rounded-lg hover:bg-gray-300/20 transition-all duration-300 cursor-pointer;
   }
 }
