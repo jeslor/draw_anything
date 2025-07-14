@@ -4,10 +4,15 @@ import draw from "./assets/draw.webp";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
 const colors = {
-  red: "rgba(255, 0, 0, 0.9)",
-  green: "rgba(0, 255, 0, 0.9)",
-  blue: "rgba(0, 0, 255, 0.9)",
-  yellow: "rgba(255, 255, 0, 0.9)",
+  red: "red",
+  green: "green",
+  blue: "blue",
+  gray: "gray",
+  purple: "purple",
+  orange: "orange",
+  pink: "pink",
+  brown: "brown",
+  blurywood: "blurywood",
 };
 
 const App = () => {
@@ -48,22 +53,35 @@ const App = () => {
             />
           </div>
         </div>
-        <div className="w-[340px]  h-full py-5 pt-[6rem] border-l-[1px] border-gray-100/10 bg-gray-100/5 backdrop-blur-2xl flex flex-col justify-between">
+        <div className="w-[340px]  h-full py-5 pt-[6rem] border-l-[1px] border-gray-100/10 bg-gray-100/5 backdrop-blur-2xl flex flex-col ">
           <div className="flex flex-col items-center justify-center gap-y-4 px-7">
             <button className="mainButton w-full py-3 text-start capitalize flex items-center gap-x-2">
-              <Icon icon="grommet-icons:undo" />
+              <Icon className="text-[28px]" icon="grommet-icons:undo" />
               undo
             </button>
             <button className="mainButton w-full py-3 text-start capitalize flex items-center gap-x-2">
-              <Icon icon="grommet-icons:redo" />
+              <Icon className="text-[28px]" icon="grommet-icons:redo" />
               redo
             </button>
             <button className="mainButton w-full py-3 text-start capitalize flex items-center gap-x-2">
-              <Icon icon="lsicon:clear-outline" />
+              <Icon className="text-[28px]" icon="lsicon:clear-outline" />
               clear canvas
             </button>
           </div>
-          <div></div>
+          <div className="flex flex-col  justify-center mt-6">
+            <h2 className="text-[18px] font-semibold text-gray-200 px-4">
+              Select Color
+            </h2>
+            <div className="flex items-center justify-start flex-wrap gap-2 px-4 py-3">
+              {Object.keys(colors).map((color) => (
+                <button
+                  style={{ backgroundColor: colors[color] }}
+                  key={color}
+                  className={`w-[40px] h-[40px] rounded-md  transition-all duration-300 hover:scale-110 cursor-pointer hover:opacity-90`}
+                ></button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </main>
