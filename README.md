@@ -31,6 +31,6 @@ Powered by **MediaPipe** hand tracking, **React**, and **Tailwind CSS**, it trac
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/jeslor/draw-anything.git
+   git clone https://github.com/jeslor/draw_anything.git
    cd draw-anything
    ```
