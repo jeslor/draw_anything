@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Navbar from "./components/Navbar";
 import { Icon } from "@iconify/react";
 import { Camera } from "@mediapipe/camera_utils";
@@ -17,27 +17,126 @@ const App = () => {
   const [gesture, setGesture] = useState("Idle (Pinch to Draw)");
   const [isRefining, setIsRefining] = useState(false);
 
+  // Undo/Redo state
+  const canvasHistoryRef = useRef([]);
+  const historyIndexRef = useRef(-1);
+  const [canUndoRedo, setCanUndoRedo] = useState({
+    canUndo: false,
+    canRedo: false,
+  });
+
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-pro-vision",
   });
+
+  // Update undo/redo button states
+  const updateUndoRedoStates = useCallback(() => {
+    const canUndo = historyIndexRef.current > 0;
+    const canRedo =
+      historyIndexRef.current < canvasHistoryRef.current.length - 1;
+    setCanUndoRedo({ canUndo, canRedo });
+  }, []);
+
+  // Save canvas state to history
+  const saveCanvasState = useCallback(() => {
+    const drawCanvas = drawCanvasRef.current;
+    if (!drawCanvas) return;
+
+    const imageData = drawCanvas.toDataURL();
+
+    // Remove any states after current index (for when we're in middle of history)
+    const newHistory = canvasHistoryRef.current.slice(
+      0,
+      historyIndexRef.current + 1
+    );
+    newHistory.push(imageData);
+
+    // Limit history to 50 states to prevent memory issues
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    } else {
+      historyIndexRef.current++;
+    }
+
+    canvasHistoryRef.current = newHistory;
+    updateUndoRedoStates();
+  }, [updateUndoRedoStates]);
+
+  // Restore canvas state from history
+  const restoreCanvasState = useCallback((imageData) => {
+    const drawCanvas = drawCanvasRef.current;
+    if (!drawCanvas) return;
+
+    const ctx = drawCanvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      ctx.drawImage(img, 0, 0);
+    };
+
+    img.src = imageData;
+  }, []);
+
+  // Undo function
+  const handleUndo = useCallback(() => {
+    if (historyIndexRef.current > 0) {
+      historyIndexRef.current--;
+      restoreCanvasState(canvasHistoryRef.current[historyIndexRef.current]);
+      updateUndoRedoStates();
+    }
+  }, [restoreCanvasState, updateUndoRedoStates]);
+
+  // Redo function
+  const handleRedo = useCallback(() => {
+    if (historyIndexRef.current < canvasHistoryRef.current.length - 1) {
+      historyIndexRef.current++;
+      restoreCanvasState(canvasHistoryRef.current[historyIndexRef.current]);
+      updateUndoRedoStates();
+    }
+  }, [restoreCanvasState, updateUndoRedoStates]);
+
+  // Clear canvas and save state
+  const handleClearCanvas = useCallback(() => {
+    const ctx = drawCanvasRef.current.getContext("2d");
+    ctx.clearRect(
+      0,
+      0,
+      drawCanvasRef.current.width,
+      drawCanvasRef.current.height
+    );
+    saveCanvasState();
+  }, [saveCanvasState]);
 
   useEffect(() => {
     const video = videoRef.current;
     const landmarkCanvas = landmarkCanvasRef.current;
     const drawCanvas = drawCanvasRef.current;
     const pencil = pencilRef.current;
+
+    if (!video || !landmarkCanvas || !drawCanvas || !pencil) return;
+
     const landmarkCtx = landmarkCanvas.getContext("2d");
     const drawCtx = drawCanvas.getContext("2d");
 
     landmarkCanvas.width = drawCanvas.width = 640;
     landmarkCanvas.height = drawCanvas.height = 480;
 
+    // Save initial blank canvas state only once
+    if (canvasHistoryRef.current.length === 0) {
+      const initialState = drawCanvas.toDataURL();
+      canvasHistoryRef.current.push(initialState);
+      historyIndexRef.current = 0;
+      updateUndoRedoStates();
+    }
+
     let lastX = null;
     let lastY = null;
     let smoothX = null;
     let smoothY = null;
     let drawing = false;
+    let strokeStarted = false;
     let currentStrokeColor = currentColor;
 
     const SMOOTHING = 0.5;
@@ -65,18 +164,14 @@ const App = () => {
 
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const lms = results.multiHandLandmarks[0];
-        // CHANGE START
         const thumbTip = lms[4]; // Thumb tip landmark
-        const indexTip = lms[8]; // Index finger tip landmark (still used for pinch detection)
-        // CHANGE END
+        const indexTip = lms[8]; // Index finger tip landmark
 
-        const pinchDistance = distance(indexTip, thumbTip); // Pinch logic remains the same
+        const pinchDistance = distance(indexTip, thumbTip);
 
-        // CHANGE START
-        // Use thumbTip.x and thumbTip.y for pencil position
-        const x = (1 - thumbTip.x) * drawCanvas.width;
-        const y = thumbTip.y * drawCanvas.height;
-        // CHANGE END
+        // Always use index finger position for pencil when not drawing
+        const x = (1 - indexTip.x) * drawCanvas.width;
+        const y = indexTip.y * drawCanvas.height;
 
         if (smoothX === null || smoothY === null) {
           smoothX = x;
@@ -86,25 +181,28 @@ const App = () => {
           smoothY += SMOOTHING * (y - smoothY);
         }
 
+        // Always show and position pencil when hand is detected
+        pencil.style.left = `${smoothX - 14}px`;
+        pencil.style.top = `${smoothY - 14}px`;
+        pencil.style.display = "block";
+
         if (pinchDistance < PINCH_THRESHOLD) {
           if (!drawing) {
             lastX = smoothX;
             lastY = smoothY;
             currentStrokeColor = currentColor;
+            strokeStarted = false;
           }
           drawing = true;
           setGesture("Drawing Mode");
-          if (pencil) {
-            pencil.style.left = `${smoothX - 14}px`;
-            pencil.style.top = `${smoothY - 14}px`;
-            pencil.style.display = "block";
-          }
         } else {
-          drawing = false;
-          setGesture("Idle (Pinch to Draw)");
-          if (pencil) {
-            pencil.style.display = "none";
+          // If we were drawing and now stopped, save canvas state
+          if (drawing && strokeStarted) {
+            saveCanvasState();
           }
+          drawing = false;
+          strokeStarted = false;
+          setGesture("Idle (Pinch to Draw)");
           lastX = null;
           lastY = null;
         }
@@ -122,13 +220,13 @@ const App = () => {
             drawCtx.lineWidth = 4;
             drawCtx.lineCap = "round";
             drawCtx.stroke();
+            strokeStarted = true;
           }
           lastX = smoothX;
           lastY = smoothY;
         }
 
         // --- MediaPipe Hand Landmark Drawing (for visualization) ---
-        // This part remains unchanged as it draws all landmarks
         const connections = [
           [0, 1],
           [1, 2],
@@ -152,6 +250,7 @@ const App = () => {
           [19, 20], // Pinky finger
           [0, 17], // Palm base connection
         ];
+
         landmarkCtx.strokeStyle = "green";
         landmarkCtx.lineWidth = 2;
         connections.forEach(([start, end]) => {
@@ -174,18 +273,22 @@ const App = () => {
           landmarkCtx.fill();
         });
       } else {
-        drawing = false;
-        if (pencil) {
-          pencil.style.display = "none";
+        // If we were drawing and hand disappeared, save canvas state
+        if (drawing && strokeStarted) {
+          saveCanvasState();
         }
+        drawing = false;
+        strokeStarted = false;
+        pencil.style.display = "none";
         setGesture("-");
         lastX = null;
         lastY = null;
       }
     });
 
+    let camera;
     if (video) {
-      const camera = new Camera(video, {
+      camera = new Camera(video, {
         onFrame: async () => {
           await hands.send({ image: video });
         },
@@ -194,7 +297,14 @@ const App = () => {
       });
       camera.start();
     }
-  }, [currentColor]);
+
+    // Cleanup function
+    return () => {
+      if (camera) {
+        camera.stop();
+      }
+    };
+  }, [currentColor, saveCanvasState, updateUndoRedoStates]); // Only depend on currentColor
 
   const handleRefineDrawing = async () => {
     if (isRefining) return;
@@ -246,6 +356,7 @@ const App = () => {
           const drawCtx = drawCanvas.getContext("2d");
           drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
           drawCtx.drawImage(img, 0, 0, drawCanvas.width, drawCanvas.height);
+          saveCanvasState(); // Save refined state to history
           setIsRefining(false);
         };
         img.onerror = (error) => {
@@ -300,7 +411,7 @@ const App = () => {
             />
             <canvas
               ref={landmarkCanvasRef}
-              className="absolute w-full h-full rounded-2xl z-20 top-0 left-0"
+              className="absolute w-full h-full rounded-2xl z-20 top-0"
             />
           </div>
           <p className="pt-3 text-sm text-green-400">Mode: {gesture}</p>
@@ -323,23 +434,27 @@ const App = () => {
 
         <div className="w-[340px] h-full py-5 pt-[6rem] border-l border-gray-100/10 bg-gray-100/5 backdrop-blur-2xl flex flex-col">
           <div className="px-7 gap-y-4 flex flex-col">
-            <button className="mainButton py-3 text-start flex items-center gap-x-2">
+            <button
+              className={`mainButton py-3 text-start flex items-center gap-x-2 ${
+                !canUndoRedo.canUndo ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              onClick={handleUndo}
+              disabled={!canUndoRedo.canUndo}
+            >
               <Icon className="text-[28px]" icon="grommet-icons:undo" /> Undo
             </button>
-            <button className="mainButton py-3 text-start flex items-center gap-x-2">
+            <button
+              className={`mainButton py-3 text-start flex items-center gap-x-2 ${
+                !canUndoRedo.canRedo ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              onClick={handleRedo}
+              disabled={!canUndoRedo.canRedo}
+            >
               <Icon className="text-[28px]" icon="grommet-icons:redo" /> Redo
             </button>
             <button
               className="mainButton py-3 text-start flex items-center gap-x-2"
-              onClick={() => {
-                const ctx = drawCanvasRef.current.getContext("2d");
-                ctx.clearRect(
-                  0,
-                  0,
-                  drawCanvasRef.current.width,
-                  drawCanvasRef.current.height
-                );
-              }}
+              onClick={handleClearCanvas}
             >
               <Icon className="text-[28px]" icon="lsicon:clear-outline" /> Clear
               Canvas
