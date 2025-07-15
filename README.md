@@ -1,36 +1,67 @@
-# 🎨 Draw Anything
+# 🎨 GestureDraw: AI-Enhanced Hand-Tracking Canvas
 
-Draw Anything is a fun and creative web app that lets you **draw in the air using your fingers** — no mouse or pen needed! 🪄  
-Powered by **MediaPipe** hand tracking, **React**, and **Tailwind CSS**, it tracks your index finger in real-time and turns your gestures into digital drawings.
+GestureDraw is an innovative web application that transforms your hand movements into digital art! Utilizing **MediaPipe** for real-time hand tracking and **React** for a dynamic user experience, this app allows you to draw in the air with just your fingers. What's more, it integrates **Google Gemini AI** to add a touch of magic, letting you refine your creations into polished, artistic masterpieces.
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- Real-time hand tracking with MediaPipe
-- Draw by moving your index finger in the air
-- Toggle drawing mode on/off
-- Clear the canvas anytime
-- Responsive, clean UI styled with Tailwind CSS
-- Runs entirely in the browser — no downloads required
+- **Real-time Hand Tracking:** Draw effortlessly using your index finger and thumb, powered by MediaPipe.
+- **Intuitive Drawing Controls:** Pinch your index finger and thumb to start drawing, and release to stop.
+- **Customizable Colors:** Select from a palette of vibrant colors to bring your drawings to life.
+- **Drawing History:** **Undo** and **Redo** your strokes, giving you complete control over your creative process.
+- **Clear Canvas:** Easily wipe the slate clean to start a new masterpiece.
+- **AI-Powered Refinement:** Enhance your rough sketches into refined, artistic illustrations with a single click, thanks to **Google Gemini AI**.
+- **Responsive and Modern UI:** A clean, intuitive interface built with **Tailwind CSS** ensures a seamless experience across devices.
+- **Browser-Based:** No installations or downloads needed—start creating directly in your web browser!
 
 ---
 
 ## 💻 Tech Stack
 
-- [React](https://reactjs.org/)
-- [Vite](https://vitejs.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [MediaPipe Hands](https://google.github.io/mediapipe/solutions/hands.html)
-- HTML5 Canvas API
+- **Frontend:**
+  - [React](https://react.dev/)
+  - [Vite](https://vitejs.dev/)
+  - [Tailwind CSS](https://tailwindcss.com/)
+- **Hand Tracking:**
+  - [MediaPipe Hands](https://developers.google.com/mediapipe/solutions/vision/hand_landmarker)
+- **AI Integration:**
+  - [Google Gemini API](https://ai.google.dev/models/gemini)
+- **Canvas Operations:**
+  - HTML5 Canvas API
 
 ---
 
 ## ⚙️ Setup & Installation
 
-1. **Clone the repository:**
+Ready to unleash your inner artist? Follow these simple steps to get GestureDraw up and running on your local machine:
 
-   ```bash
-   git clone https://github.com/jeslor/draw_anything.git
-   cd draw-anything
-   ```
+1.  **Clone the repository:**
+
+    ```bash
+    git clone [https://github.com/jeslor/draw_anything.git](https://github.com/jeslor/draw_anything.git)
+    cd draw-anything
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+3.  **Configure Google Gemini API Key:**
+    - Obtain your API key from [Google AI Studio](https://ai.google.dev/gemini-api/docs/get-started/node).
+    - Open the `src/hooks/useHandTracking.js` file.
+    - Replace `"YOUR_GEMINI_API_KEY"` with your actual API key:
+      ```javascript
+      const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // Replace this!
+      ```
+4.  **Start the development server:**
+
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+
+    This will open the application in your browser, usually at `http://localhost:5173`. Ensure your webcam is enabled and grant permission for the browser to access it.
