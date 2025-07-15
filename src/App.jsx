@@ -4,9 +4,9 @@ import { Icon } from "@iconify/react";
 import { Camera } from "@mediapipe/camera_utils";
 import { Hands } from "@mediapipe/hands";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import pencilImage from "./assets/pencil.png"; // Assuming the pencil image is in the assets folder
+import pencilImage from "./assets/pencil.png";
 
-const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // <<< REPLACE THIS
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // <<< REPLACE THIS with your actual API key
 
 const App = () => {
   const videoRef = useRef(null);
@@ -110,6 +110,34 @@ const App = () => {
     saveCanvasState();
   }, [saveCanvasState]);
 
+  // Position pencil based on drawing coordinates
+  function positionPencil(x, y) {
+    const drawCanvas = drawCanvasRef.current;
+    const pencil = pencilRef.current;
+
+    if (!drawCanvas || !pencil) return;
+
+    // Get displayed size of the canvas (CSS size)
+    const canvasRect = drawCanvas.getBoundingClientRect();
+
+    // Get natural drawing size of canvas (width & height attributes)
+    const naturalWidth = drawCanvas.width;
+    const naturalHeight = drawCanvas.height;
+
+    // Calculate scale factor between natural size and displayed size
+    const scaleX = canvasRect.width / naturalWidth;
+    const scaleY = canvasRect.height / naturalHeight;
+
+    // Convert internal drawing coordinates (x, y) to CSS pixels inside container
+    const cssX = x * scaleX;
+    const cssY = y * scaleY;
+
+    // Position pencil with offset to match tip
+    pencil.style.left = `${cssX - 5}px`; // adjust -5 for pencil tip alignment
+    pencil.style.top = `${cssY - 25}px`; // adjust -25 for pencil tip alignment
+    pencil.style.display = "block";
+  }
+
   useEffect(() => {
     const video = videoRef.current;
     const landmarkCanvas = landmarkCanvasRef.current;
@@ -183,9 +211,7 @@ const App = () => {
         }
 
         // Always show and position pencil exactly where the line will be drawn
-        pencil.style.left = `${smoothX - 14}px`;
-        pencil.style.top = `${smoothY - 14}px`;
-        pencil.style.display = "block";
+        positionPencil(smoothX, smoothY);
 
         if (pinchDistance < PINCH_THRESHOLD) {
           if (!drawing) {
@@ -415,14 +441,14 @@ const App = () => {
           <div className="relative w-full h-[300px] rounded-2xl overflow-hidden">
             <video
               ref={videoRef}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transform -scale-x-100"
               autoPlay
               muted
               playsInline
             />
             <canvas
               ref={landmarkCanvasRef}
-              className="absolute w-full h-full rounded-2xl z-20 top-0"
+              className="absolute w-full h-full rounded-2xl z-20 top-0 transform -scale-x-100"
             />
           </div>
           <p className="pt-3 text-sm text-green-400">Mode: {gesture}</p>
@@ -432,14 +458,13 @@ const App = () => {
           <div className="relative w-full h-[80%] bg-mainColor rounded-3xl">
             <canvas
               ref={drawCanvasRef}
-              className="absolute w-full h-full rounded-3xl"
+              className="absolute w-full h-full rounded-3xl "
             />
-            <img
+            <span
               ref={pencilRef}
-              src={pencilImage}
               alt="Pencil"
-              className="absolute text-white text-[28px] z-10 size-7"
-            />
+              className="absolute text-white z-10 h-[20px] w-[20px] bg-amber-400 rounded-full"
+            ></span>
           </div>
         </div>
 
@@ -494,7 +519,7 @@ const App = () => {
           <h2 className="text-[18px] font-semibold text-gray-200 px-4 mt-6">
             Select Color
           </h2>
-          <div className="flex items-center justify-start flex-wrap gap-2 px-4 py-3">
+          <div className="flex items-center justify-start flex-wrap gap-3 px-4 py-3">
             {[
               "red",
               "green",
@@ -509,9 +534,9 @@ const App = () => {
                 key={color}
                 onClick={() => handleColorChange(color)}
                 style={{ backgroundColor: color }}
-                className={`w-[40px] h-[40px] rounded-md transition-all duration-300 cursor-pointer ${
+                className={`w-[37px] h-[37px] rounded-md transition-all duration-300 cursor-pointer ${
                   currentColor === color
-                    ? "scale-125 ring-2 ring-white"
+                    ? "scale-115 ring-2 ring-white"
                     : "hover:scale-110"
                 }`}
               />
