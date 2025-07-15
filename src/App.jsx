@@ -20,6 +20,7 @@ const App = () => {
   // Undo/Redo state
   const canvasHistoryRef = useRef([]);
   const historyIndexRef = useRef(-1);
+  const currentStrokeColorRef = useRef(currentColor);
   const [canUndoRedo, setCanUndoRedo] = useState({
     canUndo: false,
     canRedo: false,
@@ -169,29 +170,31 @@ const App = () => {
 
         const pinchDistance = distance(indexTip, thumbTip);
 
-        // Always use index finger position for pencil when not drawing
-        const x = (1 - indexTip.x) * drawCanvas.width;
-        const y = indexTip.y * drawCanvas.height;
+        // Use thumb tip for drawing position (where the line will be drawn)
+        const drawX = (1 - thumbTip.x) * drawCanvas.width;
+        const drawY = thumbTip.y * drawCanvas.height;
 
         if (smoothX === null || smoothY === null) {
-          smoothX = x;
-          smoothY = y;
+          smoothX = drawX;
+          smoothY = drawY;
         } else {
-          smoothX += SMOOTHING * (x - smoothX);
-          smoothY += SMOOTHING * (y - smoothY);
+          smoothX += SMOOTHING * (drawX - smoothX);
+          smoothY += SMOOTHING * (drawY - smoothY);
         }
 
-        // Always show and position pencil when hand is detected
+        // Always show and position pencil exactly where the line will be drawn
         pencil.style.left = `${smoothX - 14}px`;
         pencil.style.top = `${smoothY - 14}px`;
         pencil.style.display = "block";
 
         if (pinchDistance < PINCH_THRESHOLD) {
           if (!drawing) {
-            lastX = smoothX;
-            lastY = smoothY;
+            // Reset drawing state and set current color
+            lastX = null;
+            lastY = null;
             currentStrokeColor = currentColor;
             strokeStarted = false;
+            drawCtx.beginPath(); // Start fresh path
           }
           drawing = true;
           setGesture("Drawing Mode");
@@ -208,22 +211,29 @@ const App = () => {
         }
 
         if (drawing) {
-          const dx = smoothX - lastX;
-          const dy = smoothY - lastY;
-          const dist = Math.hypot(dx, dy);
-
-          if (lastX !== null && lastY !== null && dist > MOVE_THRESHOLD) {
+          if (lastX === null || lastY === null) {
+            // First point of the stroke
+            lastX = smoothX;
+            lastY = smoothY;
             drawCtx.beginPath();
-            drawCtx.moveTo(lastX, lastY);
-            drawCtx.lineTo(smoothX, smoothY);
-            drawCtx.strokeStyle = currentStrokeColor;
+            drawCtx.moveTo(smoothX, smoothY);
+            drawCtx.strokeStyle = currentStrokeColorRef.current;
             drawCtx.lineWidth = 4;
             drawCtx.lineCap = "round";
-            drawCtx.stroke();
-            strokeStarted = true;
+            drawCtx.lineJoin = "round";
+          } else {
+            const dx = smoothX - lastX;
+            const dy = smoothY - lastY;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > MOVE_THRESHOLD) {
+              drawCtx.lineTo(smoothX, smoothY);
+              drawCtx.stroke();
+              strokeStarted = true;
+              lastX = smoothX;
+              lastY = smoothY;
+            }
           }
-          lastX = smoothX;
-          lastY = smoothY;
         }
 
         // --- MediaPipe Hand Landmark Drawing (for visualization) ---
@@ -387,6 +397,7 @@ const App = () => {
 
   const handleColorChange = (color) => {
     setCurrentColor(color);
+    currentStrokeColorRef.current = color; // Update ref so drawing uses correct color
   };
 
   return (
@@ -498,7 +509,11 @@ const App = () => {
                 key={color}
                 onClick={() => handleColorChange(color)}
                 style={{ backgroundColor: color }}
-                className="w-[40px] h-[40px] rounded-md transition-all duration-300 hover:scale-110 cursor-pointer"
+                className={`w-[40px] h-[40px] rounded-md transition-all duration-300 cursor-pointer ${
+                  currentColor === color
+                    ? "scale-125 ring-2 ring-white"
+                    : "hover:scale-110"
+                }`}
               />
             ))}
           </div>
