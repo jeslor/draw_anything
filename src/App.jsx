@@ -300,7 +300,7 @@ const App = () => {
             />
             <canvas
               ref={landmarkCanvasRef}
-              className="absolute w-full h-full rounded-2xl"
+              className="absolute w-full h-full rounded-2xl z-20 top-0 left-0"
             />
           </div>
           <p className="pt-3 text-sm text-green-400">Mode: {gesture}</p>
