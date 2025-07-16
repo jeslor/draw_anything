@@ -8,7 +8,7 @@ const SMOOTHING = 0.4;
 const MOVE_THRESHOLD = 0.9;
 const MAX_HISTORY_STATES = 50;
 
-const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // <<< REPLACE THIS with your actual API key
+const REPLICATE_API_TOKEN = "REPLICATE_API_TOKEN"; // <<< REPLACE THIS with your actual API key
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -31,16 +31,6 @@ export const useHandTracking = () => {
     canUndo: false,
     canRedo: false,
   });
-
-  const genAI = useRef(null);
-  const model = useRef(null);
-
-  useEffect(() => {
-    genAI.current = new GoogleGenerativeAI(GEMINI_API_KEY);
-    model.current = genAI.current.getGenerativeModel({
-      model: "gemini-pro-vision",
-    });
-  }, []);
 
   // Update undo/redo button states
   const updateUndoRedoStates = useCallback(() => {
@@ -326,10 +316,11 @@ export const useHandTracking = () => {
   }, [saveCanvasState, updateUndoRedoStates, positionPencil]);
 
   const handleRefineDrawing = useCallback(async () => {
-    if (isRefining || !model.current) return;
+    if (isRefining) return;
 
     setIsRefining(true);
     const drawCanvas = drawCanvasRef.current;
+
     if (!drawCanvas) {
       console.error("Drawing canvas not found.");
       setIsRefining(false);
@@ -337,69 +328,38 @@ export const useHandTracking = () => {
     }
 
     const dataUrl = drawCanvas.toDataURL("image/png");
-    const base64Image = dataUrl.split(",")[1];
-
-    if (!base64Image) {
-      console.error("Could not get image data from canvas.");
-      setIsRefining(false);
-      return;
-    }
 
     try {
-      const result = await model.current.generateContent([
-        {
-          text: "Refine this drawing, make it look more polished and artistic. Do not add or remove elements, just improve the existing lines and shapes. Return only the refined image.",
-        },
-        {
-          inlineData: {
-            mimeType: "image/png",
-            data: base64Image,
-          },
-        },
-      ]);
+      const response = await fetch("/api/enhance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
 
-      const response = await result.response;
-      const parts = response.candidates[0].content.parts;
+      const data = await response.json();
+      const enhancedImageUrl = data?.output;
 
-      const imagePart = parts.find(
-        (part) =>
-          part.inlineData && part.inlineData.mimeType.startsWith("image/")
-      );
-
-      if (imagePart && imagePart.inlineData) {
-        const refinedBase64 = imagePart.inlineData.data;
-        const refinedImageSrc = `data:${imagePart.inlineData.mimeType};base64,${refinedBase64}`;
-
-        const img = new Image();
-        img.onload = () => {
-          const drawCtx = drawCanvas.getContext("2d");
-          drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-          drawCtx.drawImage(img, 0, 0, drawCanvas.width, drawCanvas.height);
-          saveCanvasState(); // Save refined state to history
-          setIsRefining(false);
-        };
-        img.onerror = (error) => {
-          console.error("Error loading refined image:", error);
-          setIsRefining(false);
-        };
-        img.src = refinedImageSrc;
-      } else {
-        console.warn("Gemini did not return an image. Response parts:", parts);
-        const textPart = parts.find((part) => part.text);
-        if (textPart) {
-          alert("Gemini responded with text: " + textPart.text);
-        } else {
-          alert(
-            "Gemini did not return a recognizable image or text for refinement."
-          );
-        }
-        setIsRefining(false);
+      if (!enhancedImageUrl) {
+        throw new Error("No enhanced image returned from API.");
       }
-    } catch (error) {
-      console.error("Error refining drawing with Gemini:", error);
-      alert(
-        "Failed to refine drawing. Check console for details and API key/usage."
-      );
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const ctx = drawCanvas.getContext("2d");
+        ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        ctx.drawImage(img, 0, 0, drawCanvas.width, drawCanvas.height);
+        saveCanvasState(); // Save enhanced version
+        setIsRefining(false);
+      };
+      img.onerror = (err) => {
+        console.error("Error loading enhanced image", err);
+        setIsRefining(false);
+      };
+      img.src = enhancedImageUrl;
+    } catch (err) {
+      console.error("Enhancement failed:", err);
+      alert("Enhancement failed. Check console for more info.");
       setIsRefining(false);
     }
   }, [isRefining, saveCanvasState]);
