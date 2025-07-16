@@ -57,10 +57,7 @@ const ControlPanel = ({
         >
           {isRefining ? (
             <>
-              <Icon
-                icon="line-md:loading-loop"
-                className="text-[28px] animate-spin"
-              />{" "}
+              <span className="loader-circle w-5 h-5 rounded-full border-2 border-t-transparent border-white animate-spin" />
               Refining...
             </>
           ) : (
