@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const PINCH_THRESHOLD = 0.08;
 const SMOOTHING = 0.4;
-const MOVE_THRESHOLD = 0.9;
+const MOVE_THRESHOLD = 1.0;
 const MAX_HISTORY_STATES = 50;
 
 const REPLICATE_API_TOKEN = "REPLICATE_API_TOKEN"; // <<< REPLACE THIS with your actual API key

@@ -30,7 +30,7 @@ Draw Anything is an innovative web application that transforms your hand movemen
 - **Hand Tracking:**
   - [MediaPipe Hands](https://developers.google.com/mediapipe/solutions/vision/hand_landmarker)
 - **AI Integration:**
-  - [Google Gemini API](https://ai.google.dev/models/gemini)
+  - [REPLICATE API](https://replicate.com)
 - **Canvas Operations:**
   - HTML5 Canvas API
 
