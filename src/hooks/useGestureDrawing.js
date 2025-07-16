@@ -4,7 +4,7 @@ import { Hands } from "@mediapipe/hands";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const PINCH_THRESHOLD = 0.08;
-const SMOOTHING = 0.36;
+const SMOOTHING = 0.4;
 const MOVE_THRESHOLD = 0.9;
 const MAX_HISTORY_STATES = 50;
 
