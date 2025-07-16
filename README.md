@@ -1,3 +1,5 @@
+![UI](./src/assets/DrawAnything.png)
+
 # 🎨 Draw Anything
 
 Draw Anything is an innovative web application that transforms your hand movements into digital art! Utilizing **MediaPipe** for real-time hand tracking and **React** for a dynamic user experience, this app allows you to draw in the air with just your fingers. What's more, it soon integrating **Google Gemini AI** to add a touch of magic, letting you refine your creations into polished, artistic masterpieces.
@@ -11,7 +13,7 @@ Draw Anything is an innovative web application that transforms your hand movemen
 - **Customizable Colors:** Select from a palette of vibrant colors to bring your drawings to life.
 - **Drawing History:** **Undo** and **Redo** your strokes, giving you complete control over your creative process.
 - **Clear Canvas:** Easily wipe the slate clean to start a new masterpiece.
-- **AI-Powered Refinement:** Enhance your rough sketches into refined, artistic illustrations with a single click, thanks to **Google Gemini AI**.
+- **AI-Powered Refinement:** (Coming soon) Enhance your rough sketches into refined, artistic illustrations with a single click, thanks to **Google Gemini AI**.
 - **Responsive and Modern UI:** A clean, intuitive interface built with **Tailwind CSS** ensures a seamless experience across devices.
 - **Browser-Based:** No installations or downloads needed—start creating directly in your web browser!
 
@@ -51,7 +53,7 @@ Ready to unleash your inner artist? Follow these simple steps to get GestureDraw
     ```
 3.  **Configure Google Gemini API Key:**
     - Obtain your API key from [Google AI Studio](https://ai.google.dev/gemini-api/docs/get-started/node).
-    - Open the `src/hooks/useHandTracking.js` file.
+    - Open the `src/hooks/useGestureDrawing.js` file.
     - Replace `"YOUR_GEMINI_API_KEY"` with your actual API key:
       ```javascript
       const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // Replace this!
