@@ -2,7 +2,7 @@
 
 ![UI](./src/assets/DrawAnything.png)
 
-Draw Anything is an innovative web application that transforms your hand movements into digital art! Utilizing **MediaPipe** for real-time hand tracking and **React** for a dynamic user experience, this app allows you to draw in the air with just your fingers. What's more, it soon integrating **Google Gemini AI** to add a touch of magic, letting you refine your creations into polished, artistic masterpieces.
+Draw Anything is a simple react web application that transforms your hand movements into digital art! Utilizing **MediaPipe** for real-time hand tracking and **React** for a dynamic user experience, this app allows you to draw in the air with just your fingers. What's more, it soon integrating **Google vision and Replicate AI** to add a touch of magic, letting you refine your creations into polished, artistic masterpieces.
 
 <p>Check out the live <a href="https://draw-anything-swart.vercel.app" target="_blank"><strong>Demo</strong></a>!</p>
 
