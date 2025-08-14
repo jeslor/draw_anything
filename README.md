@@ -43,7 +43,7 @@ Ready to unleash your inner artist? Follow these simple steps to get GestureDraw
 1.  **Clone the repository:**
 
     ```bash
-    git clone [https://github.com/jeslor/draw_anything.git]
+    git clone https://github.com/jeslor/draw_anything.git
     cd draw-anything
     ```
 
